@@ -4,10 +4,18 @@
 #include <sdktools>
 #include <sdkhooks>
 
+ConVar sv_full_alltalk;
 
 public void OnPluginStart()
 {
-   HookEvent("player_spawn", PlayerSpawn);  
+	HookEvent("player_spawn", PlayerSpawn);
+	sv_full_alltalk = FindConVar("sv_full_alltalk");
+	sv_full_alltalk.IntValue = 1;
+	HookConVarChange(sv_full_alltalk,OnMapCvrChanged);
+}
+
+public void OnMapCvrChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+	sv_full_alltalk.IntValue = 1;
 }
 
 public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast) 
