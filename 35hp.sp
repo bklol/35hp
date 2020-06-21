@@ -34,10 +34,14 @@ public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	if(IsValidClient(client))
 	{
 		RemoveGuns(client);
-		SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
-		SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
-		
+		CreateTimer(0.2,GiveHp,client);
 	}
+}
+
+public Action GiveHp(Handle timer, int client)
+{
+	SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
+	SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
 }
 
 public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
