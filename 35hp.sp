@@ -5,7 +5,9 @@
 #include <sdkhooks>
 
 ConVar sv_full_alltalk;
+
 bool VoteAlready;
+
 int hp;
 
 public void OnPluginStart()
@@ -43,12 +45,16 @@ public Action GiveHp(Handle timer, int client)
 	SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
 	SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
 }
-
+ 
 public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
 {
-	if(VoteAlready)
-		return;
-	DoVoteMenu();
+
+	if (GameRules_GetProp("m_bWarmupPeriod"))
+    {
+        return;
+    }
+	if (CS_GetTeamScore(CS_TEAM_T) == 0 && CS_GetTeamScore(CS_TEAM_CT) == 0 && !VoteAlready)
+		DoVoteMenu();
 }
 
 public int Handle_VoteMenu(Menu menu, MenuAction action, int param1, int param2)
@@ -77,20 +83,21 @@ public void Handle_VoteResults(Menu menu,
 	char results[8];
 	menu.GetItem(item_info[winner][VOTEINFO_ITEM_INDEX], results, sizeof(results));
 	hp = StringToInt(results);
-	PrintToChatAll("投票结束,玩家血量设定为%i",hp);
-	ServerCommand("mp_restartgame 1");
+	PrintToChatAll("投票结束,初始玩家血量设定为%i",hp);
+	ServerCommand("mp_restartgame 2");
 	VoteAlready = true;
 }
 
 void DoVoteMenu()
 {
+	
 	if (IsVoteInProgress())
 	{
 		return;
 	}
 	Menu menu = new Menu(Handle_VoteMenu);
 	menu.VoteResultCallback = Handle_VoteResults;
-	menu.SetTitle("玩家血量投票");
+	menu.SetTitle("初始出生血量投票\n特殊地图无效");
 	menu.AddItem("35", "35Hp");
 	menu.AddItem("50", "50Hp");
 	menu.AddItem("100", "100Hp");
@@ -119,8 +126,11 @@ RemoveGuns(client)
 		RemovePlayerItem(client, WpnId)
 		AcceptEntityInput(WpnId, "Kill")
 	}
-	GivePlayerItem(client,"weapon_knife");
-	
+	WpnId = GetPlayerWeaponSlot(client,3)
+	if (WpnId==-1)
+	{
+		GivePlayerItem(client,"weapon_knife");
+	}
 }
 
 public void Event_BombPickup(Event event, const char[] name, bool dontBroadcast)
@@ -154,8 +164,8 @@ bool StripC4(int client)
 public void OnClientPutInServer(int client)
 {
 	//SDKHook(client, SDKHook_TraceAttack, OnTraceAttack);
-	//SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	SDKHook(client, SDKHook_WeaponDropPost, Event_WeaponDrop);
+	//SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 }
 
 public Event_WeaponDrop(client, weapon)
