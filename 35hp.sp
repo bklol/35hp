@@ -5,13 +5,22 @@
 #include <sdkhooks>
 
 ConVar sv_full_alltalk;
+bool VoteAlready;
+int hp;
 
 public void OnPluginStart()
 {
 	HookEvent("player_spawn", PlayerSpawn);
+	HookEvent("round_start", VoteHp);
 	sv_full_alltalk = FindConVar("sv_full_alltalk");
 	sv_full_alltalk.IntValue = 1;
 	HookConVarChange(sv_full_alltalk,OnMapCvrChanged);
+}
+
+public void OnMapStart()
+{
+	hp = 35;
+	VoteAlready = false;
 }
 
 public void OnMapCvrChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
@@ -25,10 +34,64 @@ public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	if(IsValidClient(client))
 	{
 		RemoveGuns(client);
-		SetEntProp(client, Prop_Send, "m_iHealth", 35, 1);
+		SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
 		SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
 		
 	}
+}
+
+public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
+{
+	if(VoteAlready)
+		return;
+	DoVoteMenu();
+}
+
+public int Handle_VoteMenu(Menu menu, MenuAction action, int param1, int param2)
+{
+    if (action == MenuAction_End)
+    {
+        /* This is called after VoteEnd */
+        delete menu;
+    }
+}
+ 
+public void Handle_VoteResults(Menu menu, 
+        int num_votes, 
+        int num_clients, 
+        const int[][] client_info, 
+        int num_items, 
+        const int[][] item_info)
+{
+	int winner = 0;
+	if (num_items > 1
+	&& (item_info[0][VOTEINFO_ITEM_VOTES] == item_info[1][VOTEINFO_ITEM_VOTES])
+	&& (item_info[1][VOTEINFO_ITEM_VOTES] == item_info[2][VOTEINFO_ITEM_VOTES]))
+	{
+		winner = GetRandomInt(0, 2);
+	}
+	char results[8];
+	menu.GetItem(item_info[winner][VOTEINFO_ITEM_INDEX], results, sizeof(results));
+	hp = StringToInt(results);
+	PrintToChatAll("投票结束,玩家血量设定为%i",hp);
+	ServerCommand("mp_restartgame 1");
+	VoteAlready = true;
+}
+
+void DoVoteMenu()
+{
+	if (IsVoteInProgress())
+	{
+		return;
+	}
+	Menu menu = new Menu(Handle_VoteMenu);
+	menu.VoteResultCallback = Handle_VoteResults;
+	menu.SetTitle("玩家血量投票");
+	menu.AddItem("35", "35Hp");
+	menu.AddItem("50", "50Hp");
+	menu.AddItem("100", "100Hp");
+	menu.ExitButton = false;
+	menu.DisplayVoteToAll(20);
 }
 
 RemoveGuns(client)
