@@ -4,6 +4,7 @@
 #include <sdktools>
 #include <sdkhooks>
 
+
 ConVar sv_full_alltalk;
 
 bool VoteAlready;
@@ -22,7 +23,6 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	hp = 35;
-	VoteAlready = false;
 }
 
 public void OnMapCvrChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
@@ -51,8 +51,9 @@ public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
 
 	if (GameRules_GetProp("m_bWarmupPeriod"))
     {
-        return;
-    }
+		VoteAlready = false;
+		return;
+	}
 	if (CS_GetTeamScore(CS_TEAM_T) == 0 && CS_GetTeamScore(CS_TEAM_CT) == 0 && !VoteAlready)
 		DoVoteMenu();
 }
@@ -97,7 +98,7 @@ void DoVoteMenu()
 	}
 	Menu menu = new Menu(Handle_VoteMenu);
 	menu.VoteResultCallback = Handle_VoteResults;
-	menu.SetTitle("初始出生血量投票\n特殊地图无效");
+	menu.SetTitle("初始出生血量投票");
 	menu.AddItem("35", "35Hp");
 	menu.AddItem("50", "50Hp");
 	menu.AddItem("100", "100Hp");
