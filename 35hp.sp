@@ -22,6 +22,7 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
+	VoteAlready = false;
 	hp = 35;
 }
 
@@ -45,7 +46,24 @@ public Action GiveHp(Handle timer, int client)
 	SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
 	SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
 }
- 
+
+//block map trigger
+
+public void OnEntityCreated(int entity, const char[] classname) {
+	if( (classname[0] == 't' ||  classname[0] == 'l') ? (StrEqual(classname, "trigger_multiple", false) || StrEqual(classname, "trigger_once", false) || StrEqual(classname, "trigger_hurt", false) || StrEqual(classname, "logic_relay", false)) : false)
+	{
+		SDKHook(entity, SDKHook_Use, OnEntityUse);
+		SDKHook(entity, SDKHook_StartTouch, OnEntityUse);
+		SDKHook(entity, SDKHook_Touch, OnEntityUse);
+		SDKHook(entity, SDKHook_EndTouch, OnEntityUse);
+	}
+}
+
+public Action OnEntityUse(int entity, int client)
+{
+	return Plugin_Handled;
+}
+
 public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
 {
 
@@ -84,7 +102,7 @@ public void Handle_VoteResults(Menu menu,
 	char results[8];
 	menu.GetItem(item_info[winner][VOTEINFO_ITEM_INDEX], results, sizeof(results));
 	hp = StringToInt(results);
-	PrintToChatAll("投票结束,初始玩家血量设定为%i",hp);
+	PrintToChatAll("投票结束,血量设定为%i",hp);
 	ServerCommand("mp_restartgame 2");
 	VoteAlready = true;
 }
@@ -98,7 +116,7 @@ void DoVoteMenu()
 	}
 	Menu menu = new Menu(Handle_VoteMenu);
 	menu.VoteResultCallback = Handle_VoteResults;
-	menu.SetTitle("初始出生血量投票");
+	menu.SetTitle("出生血量投票");
 	menu.AddItem("35", "35Hp");
 	menu.AddItem("50", "50Hp");
 	menu.AddItem("100", "100Hp");
