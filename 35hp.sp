@@ -50,7 +50,10 @@ public Action GiveHp(Handle timer, int client)
 //block map trigger
 
 public void OnEntityCreated(int entity, const char[] classname) {
-	if( (classname[0] == 't' ||  classname[0] == 'l') ? (StrEqual(classname, "trigger_multiple", false) || StrEqual(classname, "trigger_once", false) || StrEqual(classname, "trigger_hurt", false) || StrEqual(classname, "logic_relay", false)) : false)
+	if( (classname[0] == 't' ||  classname[0] == 'l') ? (StrEqual(classname, "trigger_multiple", false) || 
+	StrEqual(classname, "trigger_once", false) || 
+	StrEqual(classname, "trigger_hurt", false) || 
+	StrEqual(classname, "logic_relay", false)) : false)
 	{
 		SDKHook(entity, SDKHook_Use, OnEntityUse);
 		SDKHook(entity, SDKHook_StartTouch, OnEntityUse);
@@ -109,7 +112,6 @@ public void Handle_VoteResults(Menu menu,
 
 void DoVoteMenu()
 {
-	
 	if (IsVoteInProgress())
 	{
 		return;
@@ -127,29 +129,30 @@ void DoVoteMenu()
 RemoveGuns(client)
 {
 	
-	int WpnId = GetPlayerWeaponSlot(client,1)
+	int WpnId = GetPlayerWeaponSlot(client,0);
 	if (WpnId!=-1)
 	{
-		RemovePlayerItem(client, WpnId)
-		AcceptEntityInput(WpnId, "Kill")
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
 	}
-	WpnId = GetPlayerWeaponSlot(client,2)
+	
+	WpnId = GetPlayerWeaponSlot(client,1);
 	if (WpnId!=-1)
 	{
-		RemovePlayerItem(client, WpnId)
-		AcceptEntityInput(WpnId, "Kill")
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
 	}
-	WpnId = GetPlayerWeaponSlot(client,3)
-	if (WpnId!=-1)
+	
+	WpnId = GetPlayerWeaponSlot(client,2);
+	while (WpnId!=-1)
 	{
-		RemovePlayerItem(client, WpnId)
-		AcceptEntityInput(WpnId, "Kill")
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+		WpnId = GetPlayerWeaponSlot(client,2);
 	}
-	WpnId = GetPlayerWeaponSlot(client,3)
-	if (WpnId==-1)
-	{
-		GivePlayerItem(client,"weapon_knife");
-	}
+	
+	GivePlayerItem(client,"weapon_knife");
+
 }
 
 public void Event_BombPickup(Event event, const char[] name, bool dontBroadcast)
@@ -170,7 +173,7 @@ bool StripC4(int client)
             /* If the player is holding C4, switch to the best weapon before removing it. */
             if (StrEqual(weapon, "weapon_c4"))
             {
-                ClientCommand(client, "slot3");
+                ClientCommand(client, "slot2");
             }
             RemovePlayerItem(client, c4Index);
             AcceptEntityInput(c4Index, "Kill");
