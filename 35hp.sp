@@ -75,7 +75,7 @@ public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
 		VoteAlready = false;
 		return;
 	}
-	if (CS_GetTeamScore(CS_TEAM_T) == 0 && CS_GetTeamScore(CS_TEAM_CT) == 0 && !VoteAlready)
+	if (!VoteAlready)
 		DoVoteMenu();
 }
 
@@ -192,7 +192,9 @@ public void OnClientPutInServer(int client)
 
 public Event_WeaponDrop(client, weapon)
 {
-    CreateTimer(0.1, removeWeapon, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
+	if(!IsValidEntity(weapon)|| weapon < 0)
+		return;
+	CreateTimer(0.1, removeWeapon, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action removeWeapon(Handle hTimer, any iWeaponRef)
