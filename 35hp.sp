@@ -15,7 +15,7 @@ public void OnPluginStart()
 {
 	HookEvent("player_spawn", PlayerSpawn);
 	HookEvent("round_start", VoteHp);
-	sv_full_alltalk = FindConVar("sv_full_alltalk");
+	sv_full_alltalk = FindConVar("sv_alltalk");
 	sv_full_alltalk.IntValue = 1;
 	HookConVarChange(sv_full_alltalk,OnMapCvrChanged);
 }
@@ -50,10 +50,8 @@ public Action GiveHp(Handle timer, int client)
 //block map trigger
 
 public void OnEntityCreated(int entity, const char[] classname) {
-	if( (classname[0] == 't' ||  classname[0] == 'l') ? (StrEqual(classname, "trigger_multiple", false) || 
-	StrEqual(classname, "trigger_once", false) || 
-	StrEqual(classname, "trigger_hurt", false) || 
-	StrEqual(classname, "logic_relay", false)) : false)
+
+	if(StrEqual(classname, "trigger_multiple"))
 	{
 		SDKHook(entity, SDKHook_Use, OnEntityUse);
 		SDKHook(entity, SDKHook_StartTouch, OnEntityUse);
@@ -149,6 +147,14 @@ RemoveGuns(client)
 		RemovePlayerItem(client, WpnId);
 		AcceptEntityInput(WpnId, "Kill");
 		WpnId = GetPlayerWeaponSlot(client,2);
+	}
+	
+	WpnId = GetPlayerWeaponSlot(client,3);
+	while (WpnId!=-1)
+	{
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+		WpnId = GetPlayerWeaponSlot(client,3);
 	}
 	
 	GivePlayerItem(client,"weapon_knife");
