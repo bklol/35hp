@@ -14,20 +14,13 @@ int hp;
 public void OnPluginStart()
 {
 	HookEvent("player_spawn", PlayerSpawn);
-	HookEvent("round_start", VoteHp);
-	sv_full_alltalk = FindConVar("sv_alltalk");
-	sv_full_alltalk.IntValue = 1;
-	HookConVarChange(sv_full_alltalk,OnMapCvrChanged);
+	HookEvent("round_prestart", VoteHp);
 }
 
 public void OnMapStart()
 {
 	VoteAlready = false;
 	hp = 35;
-}
-
-public void OnMapCvrChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
-	sv_full_alltalk.IntValue = 1;
 }
 
 public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast) 
