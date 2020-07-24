@@ -2,7 +2,7 @@
 #include <cstrike>
 #include <sdktools>
 #include <sdkhooks>
-//#include <nekocore>
+#include <nekocore>
 
 #define iClutch 3
 
@@ -30,6 +30,7 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
+	ServerCommand("mp_warmuptime	30")
 	IsBlock = true;
 	VoteAlready = false;
 	hp = 35;
@@ -57,13 +58,11 @@ public Action GiveHp(Handle timer, int client)
 
 public Action knifeadmin(int client,int ags)
 {
-	/**
 	if(!NEKO_IsAdmin(client))
 	{
 		PrintToChat(client,"没有权限");
 		return;
 	}
-	**/
 	Menus_Show(client);
 }
 
@@ -72,7 +71,7 @@ void Menus_Show(int client)
 	Menu menu = new Menu(Handler_MainMenu);
 	menu.SetTitle("[Neko]刀服菜单");
 	char buffer[32];
-	Format(buffer,32,"出生装备雪球%s",GiveSnowBall?"[开启]":"[关闭]");
+	Format(buffer,32,"出生装备一个雪球%s",GiveSnowBall?"[开启]":"[关闭]");
 	menu.AddItem("1", buffer);
 	Format(buffer,32,"屏蔽地图强制35HP%s",IsBlock?"[开启]":"[关闭]");
 	menu.AddItem("2", buffer);
