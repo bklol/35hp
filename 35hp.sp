@@ -3,12 +3,14 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <nekocore>
+#include <smlib>
 
 #define iClutch 3
 
 bool VoteAlready;
 bool GiveSnowBall;
 bool IsBlock;
+bool ShowDmg[MAXPLAYERS + 1];
 int hp;
 
 int g_iOpponents; 
@@ -16,16 +18,26 @@ int g_iClutchFor;
 
 public void OnPluginStart()
 {
+	
 	GiveSnowBall = false;
 	
 	HookEvent("player_spawn", PlayerSpawn);
 	HookEvent("round_prestart", VoteHp);
-	
+	HookEvent("bomb_pickup", Event_BombPickup);
 	HookEvent("round_end", Event_RoundEnd); 
 	HookEvent("player_death", Event_Death); 
+	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Post);
 	
 	RegConsoleCmd("sm_knifeadmin",knifeadmin);
+	RegConsoleCmd("sm_hide",hidetext);
 	
+	for(int i = 1; i <= MaxClients; i++)
+	{ 
+		if(IsValidClient(i))
+		{	
+			SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
+		}
+	}
 }
 
 public void OnMapStart()
@@ -64,6 +76,12 @@ public Action knifeadmin(int client,int ags)
 		return;
 	}
 	Menus_Show(client);
+}
+
+public Action hidetext(int client,int ags)
+{
+	ShowDmg[client] = !ShowDmg[client];
+	PrintToChat(client,"显示 伤害血量 %s",ShowDmg[client]?"开启":"关闭");
 }
 
 void Menus_Show(int client)
@@ -120,7 +138,6 @@ public Action OnEntityUse(int entity, int client)
 
 public Action VoteHp(Event event, const char[] name, bool dontBroadcast)
 {
-
 	if (GameRules_GetProp("m_bWarmupPeriod"))
     {
 		VoteAlready = false;
@@ -247,9 +264,100 @@ bool StripC4(int client)
 
 public void OnClientPutInServer(int client)
 {
-	//SDKHook(client, SDKHook_TraceAttack, OnTraceAttack);
-	SDKHook(client, SDKHook_WeaponDropPost, Event_WeaponDrop);
-	//SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	if(IsValidClient(client))
+	{
+		SDKHook(client, SDKHook_WeaponDropPost, Event_WeaponDrop);
+		SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	}
+	ShowDmg[client] = true;
+}
+
+public Action OnTakeDamage (int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
+{
+    if (IsValidEntity(victim) && IsValidClient(attacker) && ShowDmg[attacker])
+    {
+		char sdamage[8];
+		int idamage = RoundToZero(damage);
+		IntToString(idamage, sdamage, sizeof(sdamage));
+		Format(sdamage,sizeof(sdamage),"-%s HP",sdamage);
+		
+		if (idamage > 0)
+        {
+			int health = GetEntProp(victim, Prop_Data, "m_iHealth");
+			float victimpos[3], clientAngle[3], clientpos[3];
+			GetEntPropVector(victim, Prop_Send, "m_vecOrigin", victimpos);
+			GetClientEyeAngles(attacker, clientAngle);
+			GetClientAbsOrigin(attacker, clientpos);
+			
+			//PrintToChat(attacker, "weapon %d, type %d", weapon , damagetype);
+			//PrintToChat(attacker, "Vic %f, %f, %f", victimpos[0], victimpos[1], victimpos[2]);
+			//PrintToChat(attacker, "DMG %f, %f, %f", damagePosition[0], damagePosition[1], damagePosition[2]);
+			//PrintToChat(attacker, "damageForce %f, %f, %f", damageForce[0], damageForce[1], damageForce[2]);
+
+			if(damagetype == 8)	return;	// inferno doesn't have damageposition and damageForce :(
+			
+			if(weapon == -1 && damagetype == 64)	// grenades
+			{
+				if(idamage > health)	ShowDamageText(attacker, damagePosition, clientAngle, sdamage, true, victim);
+				else	ShowDamageText(attacker, damagePosition, clientAngle, sdamage, false, victim);
+			}
+			else if(weapon != -1)	// normal weapons
+			{
+				if(idamage > health)	ShowDamageText(attacker, damagePosition, clientAngle, sdamage, true, victim);
+				else	ShowDamageText(attacker, damagePosition, clientAngle, sdamage, false, victim);
+			}
+        }
+    }
+}  
+
+public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
+{
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int idamage = event.GetInt("dmg_health");
+	char sWeapon[50];
+	event.GetString("weapon", sWeapon, 50, "");
+	int health = GetClientHealth(victim);
+
+	//if(!IsValidClient(attacker) || IsFakeClient(attacker) || attacker == victim || !ShowDmg[client]) return;
+
+	ReplaceString(sWeapon, 50, "_projectile", "");
+
+	if (!sWeapon[0])	return;
+	if(StrContains("inferno|molotov|decoy|flashbang|hegrenade|smokegrenade", sWeapon) != -1)
+	{
+		float victimpos[3], clientAngle[3];
+		GetClientAbsOrigin(victim, victimpos);
+		GetClientEyeAngles(attacker, clientAngle);
+		
+		victimpos[0] += GetRandomFloat(-20.0, 20.0);
+		victimpos[1] += GetRandomFloat(-20.0, 20.0);
+		victimpos[2] += GetRandomFloat(10.0, 30.0);
+		
+		char damage[8];
+		IntToString(idamage, damage, sizeof(damage));
+		Format(damage,sizeof(damage),"-%s HP",damage);
+		
+		if(health < 1)	ShowDamageText(attacker, victimpos, clientAngle, damage, true, victim);
+		else	ShowDamageText(attacker, victimpos, clientAngle, damage, false, victim);
+	}
+	else
+	{
+		float pos[3], clientEye[3], clientAngle[3];
+		GetClientEyePosition(attacker, clientEye);
+		GetClientEyeAngles(attacker, clientAngle);
+		
+		TR_TraceRayFilter(clientEye, clientAngle, MASK_SOLID, RayType_Infinite, HitSelf, attacker);
+		
+		if (TR_DidHit(INVALID_HANDLE))	TR_GetEndPosition(pos);
+		
+		char damage[8];
+		IntToString(idamage, damage, sizeof(damage));
+		Format(damage,sizeof(damage),"-%s HP",damage);
+		
+		if(health < 1)	ShowDamageText(attacker, pos, clientAngle, damage, true, victim);
+		else	ShowDamageText(attacker, pos, clientAngle, damage, false, victim);
+	}
 }
 
 public Event_WeaponDrop(client, weapon)
@@ -267,6 +375,28 @@ public Action removeWeapon(Handle hTimer, any iWeaponRef)
 		return;
 	AcceptEntityInput(weapon, "kill");
     
+}
+
+public Action SetTransmit(int entity, int client) 
+{ 
+	SetFlags(entity);
+	int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	if(client == owner) return Plugin_Continue;	// draw
+	else return Plugin_Stop; // not draw
+} 
+
+public bool HitSelf(int entity, int contentsMask, any data)
+{
+	if (entity == data)	return false;
+	return true;
+}
+
+public void SetFlags(int entity) 
+{ 
+	if (GetEdictFlags(entity) & FL_EDICT_ALWAYS) 
+	{ 
+		SetEdictFlags(entity, (GetEdictFlags(entity) ^ FL_EDICT_ALWAYS)); 
+	} 
 }
 
 public void OnClientDisconnect_Post(int client)
@@ -393,4 +523,51 @@ stock bool IsValidClient( client )
 	if ( !IsClientInGame( client )) return false;
 	//if ( IsFakeClient(client)) return false;
 	return true;
+}
+
+stock int ShowDamageText(int client, float fPos[3], float fAngles[3], char[] sText, bool kill, int victim) 
+{
+	int entity = CreateEntityByName("point_worldtext"); 
+	
+	if(entity == -1)	return entity; 
+	
+	float distance;
+	
+	char stext_size_kill[32];
+	char stext_size_normal[32];
+	
+	distance = Entity_GetDistance(client, victim);
+	DispatchKeyValue(entity, "message", sText); 
+	
+	FloatToString(0.0015*distance*17, stext_size_kill, sizeof(stext_size_kill));
+	FloatToString(0.0015*distance*15, stext_size_normal, sizeof(stext_size_normal));
+	
+	if(kill)
+	{
+		DispatchKeyValue(entity, "textsize", stext_size_kill);
+		DispatchKeyValue(entity, "color", "255 0 0"); 
+	}
+	else
+	{
+		DispatchKeyValue(entity, "textsize", stext_size_normal);
+		DispatchKeyValue(entity, "color", "255 255 255"); 
+	}
+
+	SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", client);  
+	SetFlags(entity);
+	
+	SDKHook(entity, SDKHook_SetTransmit, SetTransmit);
+	TeleportEntity(entity, fPos, fAngles, NULL_VECTOR);
+	
+	CreateTimer(0.75, KillText, EntIndexToEntRef(entity));
+    
+	return entity; 
+}
+
+public Action KillText(Handle timer, int ref)
+{
+	int entity = EntRefToEntIndex(ref);
+	if(entity == INVALID_ENT_REFERENCE || !IsValidEntity(entity))	return;
+	SDKUnhook(entity, SDKHook_SetTransmit, SetTransmit);
+	AcceptEntityInput(entity, "kill");
 }
