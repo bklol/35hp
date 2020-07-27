@@ -34,7 +34,7 @@ public void OnPluginStart()
 	for(int i = 1; i <= MaxClients; i++)
 	{ 
 		if(IsValidClient(i))
-		{	
+		{
 			SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
 		}
 	}
@@ -43,8 +43,10 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	ServerCommand("mp_warmuptime	30")
+	
 	IsBlock = true;
 	VoteAlready = false;
+	
 	hp = 35;
 	
 	PrecacheSound("weapons/party_horn_01.wav");
@@ -58,7 +60,7 @@ public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	if(IsValidClient(client))
 	{
 		RemoveGuns(client);
-		CreateTimer(0.2,GiveHp,client);
+		CreateTimer(0.1,GiveHp,client);
 	}
 }
 
@@ -319,7 +321,7 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	event.GetString("weapon", sWeapon, 50, "");
 	int health = GetClientHealth(victim);
 
-	//if(!IsValidClient(attacker) || IsFakeClient(attacker) || attacker == victim || !ShowDmg[client]) return;
+	if(!IsValidClient(attacker) || IsFakeClient(attacker) || attacker == victim || !ShowDmg[attacker]) return;
 
 	ReplaceString(sWeapon, 50, "_projectile", "");
 
