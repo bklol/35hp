@@ -6,6 +6,7 @@
 #include <smlib>
 
 #define iClutch 3
+#define HIDE_RADAR_CSGO 1<<12
 
 bool VoteAlready;
 bool GiveSnowBall;
@@ -62,6 +63,8 @@ public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 		RemoveGuns(client);
 		CreateTimer(0.1,GiveHp,client);
 	}
+	
+	SetEntProp(client, Prop_Send, "m_iHideHUD", GetEntProp(client, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
 }
 
 public Action GiveHp(Handle timer, int client)
