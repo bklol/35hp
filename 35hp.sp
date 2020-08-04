@@ -94,7 +94,7 @@ void Menus_Show(int client)
 	Menu menu = new Menu(Handler_MainMenu);
 	menu.SetTitle("[Neko]刀服菜单");
 	char buffer[32];
-	Format(buffer,32,"出生装备一个雪球%s",GiveSnowBall?"[开启]":"[关闭]");
+	Format(buffer,32,"出生装备雪球%s",GiveSnowBall?"[开启]":"[关闭]");
 	menu.AddItem("1", buffer);
 	Format(buffer,32,"屏蔽地图强制35HP%s",IsBlock?"[开启]":"[关闭]");
 	menu.AddItem("2", buffer);
@@ -294,11 +294,6 @@ public Action OnTakeDamage (int victim, int &attacker, int &inflictor, float &da
 			GetClientEyeAngles(attacker, clientAngle);
 			GetClientAbsOrigin(attacker, clientpos);
 			
-			//PrintToChat(attacker, "weapon %d, type %d", weapon , damagetype);
-			//PrintToChat(attacker, "Vic %f, %f, %f", victimpos[0], victimpos[1], victimpos[2]);
-			//PrintToChat(attacker, "DMG %f, %f, %f", damagePosition[0], damagePosition[1], damagePosition[2]);
-			//PrintToChat(attacker, "damageForce %f, %f, %f", damageForce[0], damageForce[1], damageForce[2]);
-
 			if(damagetype == 8)	return;	// inferno doesn't have damageposition and damageForce :(
 			
 			if(weapon == -1 && damagetype == 64)	// grenades
