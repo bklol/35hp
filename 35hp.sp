@@ -6,7 +6,6 @@
 #include <smlib>
 
 #define iClutch 3
-#define HIDE_RADAR_CSGO 1<<12
 
 bool VoteAlready;
 bool GiveSnowBall;
@@ -58,19 +57,62 @@ public Action PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	
 	int client=GetClientOfUserId(GetEventInt(event, "userid"));
+	
 	if(IsValidClient(client))
 	{
-		RemoveGuns(client);
-		CreateTimer(0.1,GiveHp,client);
+		RequestFrame(RemoveRadar,client);
+		RequestFrame(RemoveGuns,client);
+		RequestFrame(GiveHP,client);
 	}
-	
-	SetEntProp(client, Prop_Send, "m_iHideHUD", GetEntProp(client, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
+
 }
 
-public Action GiveHp(Handle timer, int client)
+void RemoveRadar(int client)
+{
+	SetEntProp(client, Prop_Send, "m_iHideHUD", GetEntProp(client, Prop_Send, "m_iHideHUD") | (1 << 12));
+}
+
+void GiveHP(int client)
 {
 	SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
 	SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
+}
+
+void RemoveGuns(int client)
+{
+	int WpnId = GetPlayerWeaponSlot(client,0);
+	if (WpnId!=-1)
+	{
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+	}
+	
+	WpnId = GetPlayerWeaponSlot(client,1);
+	if (WpnId!=-1)
+	{
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+	}
+	
+	WpnId = GetPlayerWeaponSlot(client,2);
+	while (WpnId!=-1)
+	{
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+		WpnId = GetPlayerWeaponSlot(client,2);
+	}
+	
+	WpnId = GetPlayerWeaponSlot(client,3);
+	while (WpnId!=-1)
+	{
+		RemovePlayerItem(client, WpnId);
+		AcceptEntityInput(WpnId, "Kill");
+		WpnId = GetPlayerWeaponSlot(client,3);
+	}
+	
+	GivePlayerItem(client,"weapon_knife");
+	if(GiveSnowBall)
+		GivePlayerItem(client,"weapon_snowball");
 }
 
 public Action knifeadmin(int client,int ags)
@@ -110,12 +152,12 @@ public int Handler_MainMenu(Menu menu, MenuAction action, int client, int itemNu
 			case 0:
 			{
 				GiveSnowBall = !GiveSnowBall;
-				PrintToChatAll("管理员%N，%s 了 给每个玩家出生时一个雪球",client,GiveSnowBall?"开启":"关闭");
+				PrintToChatAll("管理员%N,%s了给每个玩家出生时一个雪球",client,GiveSnowBall?"开启":"关闭");
 			}
 			case 1:
 			{
 				IsBlock = !IsBlock;
-				PrintToChatAll("管理员%N，%s 了 屏蔽地图 强制35HP",client,IsBlock?"开启":"关闭");
+				PrintToChatAll("管理员%N,%s了屏蔽地图强制35HP",client,IsBlock?"开启":"关闭");
 			}
 		}
 	}
@@ -201,43 +243,6 @@ void DoVoteMenu()
 	menu.DisplayVoteToAll(20);
 }
 
-RemoveGuns(client)
-{
-	
-	int WpnId = GetPlayerWeaponSlot(client,0);
-	if (WpnId!=-1)
-	{
-		RemovePlayerItem(client, WpnId);
-		AcceptEntityInput(WpnId, "Kill");
-	}
-	
-	WpnId = GetPlayerWeaponSlot(client,1);
-	if (WpnId!=-1)
-	{
-		RemovePlayerItem(client, WpnId);
-		AcceptEntityInput(WpnId, "Kill");
-	}
-	
-	WpnId = GetPlayerWeaponSlot(client,2);
-	while (WpnId!=-1)
-	{
-		RemovePlayerItem(client, WpnId);
-		AcceptEntityInput(WpnId, "Kill");
-		WpnId = GetPlayerWeaponSlot(client,2);
-	}
-	
-	WpnId = GetPlayerWeaponSlot(client,3);
-	while (WpnId!=-1)
-	{
-		RemovePlayerItem(client, WpnId);
-		AcceptEntityInput(WpnId, "Kill");
-		WpnId = GetPlayerWeaponSlot(client,3);
-	}
-	
-	GivePlayerItem(client,"weapon_knife");
-	if(GiveSnowBall)
-		GivePlayerItem(client,"weapon_snowball");
-}
 
 public void Event_BombPickup(Event event, const char[] name, bool dontBroadcast)
 {
