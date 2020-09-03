@@ -43,7 +43,7 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	ServerCommand("mp_warmuptime	30")
-	
+	ServerCommand("mp_drop_knife_enable 1");
 	IsBlock = true;
 	VoteAlready = false;
 	
@@ -276,7 +276,6 @@ public void OnClientPutInServer(int client)
 {
 	if(IsValidClient(client))
 	{
-		SDKHook(client, SDKHook_WeaponDropPost, Event_WeaponDrop);
 		SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 	}
 	ShowDmg[client] = true;
@@ -363,23 +362,6 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 		if(health < 1)	ShowDamageText(attacker, pos, clientAngle, damage, true, victim);
 		else	ShowDamageText(attacker, pos, clientAngle, damage, false, victim);
 	}
-}
-
-public Event_WeaponDrop(client, weapon)
-{
-	if(!IsValidEntity(weapon)|| weapon < 0)
-		return;
-	CreateTimer(0.1, removeWeapon, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action removeWeapon(Handle hTimer, any iWeaponRef)
-{
-	static weapon;
-	weapon = EntRefToEntIndex(iWeaponRef);
-	if(iWeaponRef == INVALID_ENT_REFERENCE || !IsValidEntity(weapon)|| weapon < 0)
-		return;
-	AcceptEntityInput(weapon, "kill");
-    
 }
 
 public Action SetTransmit(int entity, int client) 
