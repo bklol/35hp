@@ -11,10 +11,15 @@ bool VoteAlready;
 bool GiveSnowBall;
 bool IsBlock;
 bool ShowDmg[MAXPLAYERS + 1];
+
 int hp;
 
 int g_iOpponents; 
 int g_iClutchFor;
+
+int iSpecialKnives[] =  { 500, 505, 506, 507, 508, 509, 512, 515 };
+
+float fPickUpRange = 125.000;
 
 public void OnPluginStart()
 {
@@ -174,6 +179,85 @@ public void OnEntityCreated(int entity, const char[] classname) {
 		SDKHook(entity, SDKHook_Touch, OnEntityUse);
 		SDKHook(entity, SDKHook_EndTouch, OnEntityUse);
 	}
+}
+
+public Action OnPlayerRunCmd(int iClient, int &iButtons)
+{
+	if (!IsPlayerAlive(iClient) || IsFakeClient(iClient)) {
+		return;
+	}
+	
+	if (iButtons & IN_USE) {
+		
+		int iEntity = GetClientAimTarget(iClient, false);
+		
+		if (!IsValidWeapon(iEntity)) {
+			return;
+		}
+		
+		if (!IsSpecialKnife(iEntity) && !IsDefaultKnife(iEntity)) {
+			return;
+		}
+		
+		if (GetDistance(iClient, iEntity) > fPickUpRange) {
+			return;
+		}
+		
+		ReplaceClientKnife(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE), iEntity);
+	}
+}
+
+stock void ReplaceClientKnife(int iClient, int iOriginalKnife, int iNewKnife)
+{
+	if (IsValidWeapon(iOriginalKnife) && iOriginalKnife != iNewKnife) {
+		CS_DropWeaponCustom(iClient, iOriginalKnife, true, true);
+	}
+	
+	EquipPlayerWeapon(iClient, iNewKnife);
+}
+
+stock bool IsDefaultKnife(int iWeapon)
+{
+	int iDefIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	
+	if (iDefIndex == 42 || iDefIndex == 59) {
+		return true;
+	}
+	
+	return false;
+}
+
+stock void CS_DropWeaponCustom(int iClient, int iWeapon, bool bToss, bool bBlockHook)
+{
+	int iOwnerEntity = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	
+	if (iOwnerEntity != iClient) {
+		SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);
+	}
+	
+	CS_DropWeapon(iClient, iWeapon, bToss, bBlockHook);
+	
+	if (iOwnerEntity != -1) {
+		SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iOwnerEntity);
+	}
+	
+	if (!IsPlayerAlive(iClient)) {
+		return;
+	}
+	
+	RemovePlayerItem(iClient, iWeapon);
+	
+	int iPrimary = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
+	int iSecondary = GetPlayerWeaponSlot(iClient, CS_SLOT_SECONDARY);
+	int iSwitchTo = iPrimary != -1 ? iPrimary : iSecondary;
+	
+	if (!IsValidWeapon(iSwitchTo)) {
+		return;
+	}
+	
+	static char chWeapon[64]; GetEdictClassname(iSwitchTo, chWeapon, sizeof(chWeapon));
+	FakeClientCommandEx(iClient, "use %s", chWeapon);
+	SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iSwitchTo);
 }
 
 public Action OnEntityUse(int entity, int client)
@@ -557,4 +641,66 @@ public Action KillText(Handle timer, int ref)
 	if(entity == INVALID_ENT_REFERENCE || !IsValidEntity(entity))	return;
 	SDKUnhook(entity, SDKHook_SetTransmit, SetTransmit);
 	AcceptEntityInput(entity, "kill");
+}
+
+stock float GetDistance(int iClient, int iEntity)
+{
+	float fClientPos[3]; float fEntityPos[3]; float fClientMins[3]; float fClientMaxs[3];
+	
+	GetClientMins(iClient, fClientMins); GetClientMaxs(iClient, fClientMins);
+	
+	float fHalfHeight = fClientMins[2] - fClientMaxs[2] + 10;
+	
+	GetClientAbsOrigin(iClient, fClientPos); GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", fEntityPos);
+	
+	float fPosHeightDiff = fClientPos[2] - fEntityPos[2];
+	
+	if (fPosHeightDiff > fHalfHeight) {
+		fClientPos[2] -= fHalfHeight;
+	}
+	
+	else if (fPosHeightDiff < (-1.0 * fHalfHeight)) {
+		fClientPos[2] -= fHalfHeight;
+	}
+	
+	else {
+		fClientPos[2] = fEntityPos[2];
+	}
+	
+	return GetVectorDistance(fClientPos, fEntityPos, false);
+}
+
+stock bool IsValidWeapon(int iWeapon)
+{
+	if (iWeapon > 4096 && iWeapon != INVALID_ENT_REFERENCE) {
+		iWeapon = EntRefToEntIndex(iWeapon);
+	}
+	
+	if (!IsValidEdict(iWeapon) || !IsValidEntity(iWeapon) || iWeapon == -1) {
+		return false;
+	}
+	
+	char chWeapon[64];
+	GetEdictClassname(iWeapon, chWeapon, sizeof(chWeapon));
+	
+	return StrContains(chWeapon, "weapon_") == 0;
+}
+
+stock bool IsSpecialKnife(int iWeapon)
+{
+	int iDefIndex = GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+	
+	if (iDefIndex == 42 || iDefIndex == 59) {
+		return false;
+	}
+	
+	else {
+		for (int i; i < sizeof(iSpecialKnives); i++) {
+			if (iDefIndex == iSpecialKnives[i]) {
+				return true;
+			}
+		}
+	}
+	
+	return false;
 }
