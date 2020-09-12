@@ -33,6 +33,8 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_Death); 
 	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Post);
 	
+	AddCommandListener(CommandDrop, "drop");
+	
 	RegConsoleCmd("sm_knifeadmin",knifeadmin);
 	RegConsoleCmd("sm_hide",hidetext);
 	
@@ -81,6 +83,27 @@ void GiveHP(int client)
 {
 	SetEntProp(client, Prop_Send, "m_iHealth", hp, 1);
 	SetEntProp(client, Prop_Send, "m_ArmorValue",0, 1);
+}
+
+public Action CommandDrop(int iClient, const char[] chCommand, int iArgs)
+{
+	if (!IsValidClient(iClient)) {
+		return Plugin_Continue;
+	}
+	
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	
+	if (!IsValidWeapon(iWeapon)) {
+		return Plugin_Continue;
+	}
+	
+	if (!IsSpecialKnife(iWeapon) && !IsDefaultKnife(iWeapon)) {
+		return Plugin_Continue;
+	}
+	
+	CS_DropWeaponCustom(iClient, iWeapon, true, true);
+	
+	return Plugin_Handled;
 }
 
 void RemoveGuns(int client)
@@ -704,3 +727,4 @@ stock bool IsSpecialKnife(int iWeapon)
 	
 	return false;
 }
+
