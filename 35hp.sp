@@ -49,8 +49,8 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-	ServerCommand("mp_warmuptime	30")
-	ServerCommand("mp_drop_knife_enable 1");
+	ServerCommand("mp_warmuptime	30");
+	//ServerCommand("mp_drop_knife_enable 1");
 	IsBlock = true;
 	VoteAlready = false;
 	
