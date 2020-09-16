@@ -5,11 +5,10 @@
 #include <nekocore>
 #include <smlib>
 
-#pragma semicolon 1
-#pragma newdecls required
 
 #define iClutch 3
-
+#pragma semicolon 1
+#pragma newdecls required
 bool VoteAlready;
 bool GiveSnowBall;
 bool IsBlock;
@@ -53,7 +52,6 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	ServerCommand("mp_warmuptime	30");
-	//ServerCommand("mp_drop_knife_enable 1");
 	IsBlock = true;
 	VoteAlready = false;
 	
@@ -613,7 +611,7 @@ int GetClutchPlayerIndex()
 	return index;
 }
 
-stock bool IsValidClient( client )
+stock bool IsValidClient( int client )
 {
 	if ( client < 1 || client > MaxClients ) return false;
 	if ( !IsClientConnected( client )) return false;
