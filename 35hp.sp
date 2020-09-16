@@ -5,6 +5,9 @@
 #include <nekocore>
 #include <smlib>
 
+#pragma semicolon 1
+#pragma newdecls required
+
 #define iClutch 3
 
 bool VoteAlready;
