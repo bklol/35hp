@@ -19,7 +19,7 @@ int hp;
 int g_iOpponents; 
 int g_iClutchFor;
 
-int iSpecialKnives[] =  { 500, 505, 506, 507, 508, 509, 512, 515 };
+int iSpecialKnives[] =  { 500, 505, 506, 507, 508, 509, 512, 515, 517, 518, 519, 520, 521, 522, 523, 525};
 
 float fPickUpRange = 125.000;
 
