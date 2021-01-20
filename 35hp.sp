@@ -351,7 +351,6 @@ void DoVoteMenu()
 	menu.DisplayVoteToAll(20);
 }
 
-
 public void Event_BombPickup(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
